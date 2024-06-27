@@ -35,7 +35,7 @@ from .reset import Reset
 
 
 class AxiStreamFrame:
-    def __init__(self, tdata=b'', tkeep=None, tid=None, tdest=None, tuser=None, tx_complete=None):
+    def __init__(self, tdata=b"", tkeep=None, tid=None, tdest=None, tuser=None, tx_complete=None):
         self.tdata = bytearray()
         self.tkeep = None
         self.tid = None
@@ -91,38 +91,38 @@ class AxiStreamFrame:
         n = len(self.tdata)
 
         if self.tkeep is not None:
-            self.tkeep = self.tkeep[:n] + [self.tkeep[-1]]*(n-len(self.tkeep))
+            self.tkeep = self.tkeep[:n] + [self.tkeep[-1]] * (n - len(self.tkeep))
         else:
-            self.tkeep = [1]*n
+            self.tkeep = [1] * n
 
         if self.tid is not None:
             if type(self.tid) in (int, bool):
-                self.tid = [self.tid]*n
+                self.tid = [self.tid] * n
             else:
-                self.tid = self.tid[:n] + [self.tid[-1]]*(n-len(self.tid))
+                self.tid = self.tid[:n] + [self.tid[-1]] * (n - len(self.tid))
         else:
-            self.tid = [0]*n
+            self.tid = [0] * n
 
         if self.tdest is not None:
             if type(self.tdest) in (int, bool):
-                self.tdest = [self.tdest]*n
+                self.tdest = [self.tdest] * n
             else:
-                self.tdest = self.tdest[:n] + [self.tdest[-1]]*(n-len(self.tdest))
+                self.tdest = self.tdest[:n] + [self.tdest[-1]] * (n - len(self.tdest))
         else:
-            self.tdest = [0]*n
+            self.tdest = [0] * n
 
         if self.tuser is not None:
             if type(self.tuser) in (int, bool):
-                self.tuser = [self.tuser]*n
+                self.tuser = [self.tuser] * n
             else:
-                self.tuser = self.tuser[:n] + [self.tuser[-1]]*(n-len(self.tuser))
+                self.tuser = self.tuser[:n] + [self.tuser[-1]] * (n - len(self.tuser))
         else:
-            self.tuser = [0]*n
+            self.tuser = [0] * n
 
     def compact(self):
         if len(self.tkeep):
             # remove tkeep=0 bytes
-            for k in range(len(self.tdata)-1, -1, -1):
+            for k in range(len(self.tdata) - 1, -1, -1):
                 if not self.tkeep[k]:
                     if k < len(self.tdata):
                         del self.tdata[k]
@@ -232,7 +232,6 @@ class AxiStreamFrame:
 
 
 class AxiStreamBus(Bus):
-
     _signals = ["tdata"]
     _optional_signals = ["tvalid", "tready", "tlast", "tkeep", "tid", "tdest", "tuser"]
 
@@ -249,7 +248,6 @@ class AxiStreamBus(Bus):
 
 
 class AxiStreamBase(Reset):
-
     _signals = ["tdata"]
     _optional_signals = ["tvalid", "tready", "tlast", "tkeep", "tid", "tdest", "tuser"]
 
@@ -260,9 +258,9 @@ class AxiStreamBase(Reset):
     _valid_init = None
     _ready_init = None
 
-    def __init__(self, bus, clock, reset=None, reset_active_level=True,
-            byte_size=None, byte_lanes=None, *args, **kwargs):
-
+    def __init__(
+        self, bus, clock, reset=None, reset_active_level=True, byte_size=None, byte_lanes=None, *args, **kwargs
+    ):
         self.bus = bus
         self.clock = clock
         self.reset = reset
@@ -271,10 +269,10 @@ class AxiStreamBase(Reset):
         else:
             self.log = logging.getLogger(f"cocotb.{bus._entity._name}")
 
-        self.log.info("AXI stream %s", self._type)
-        self.log.info("cocotbext-axi version %s", __version__)
-        self.log.info("Copyright (c) 2020 Alex Forencich")
-        self.log.info("https://github.com/alexforencich/cocotbext-axi")
+        self.log.debug("AXI stream %s", self._type)
+        self.log.debug("cocotbext-axi version %s", __version__)
+        self.log.debug("Copyright (c) 2020 Alex Forencich")
+        self.log.debug("https://github.com/alexforencich/cocotbext-axi")
 
         super().__init__(*args, **kwargs)
 
@@ -298,11 +296,11 @@ class AxiStreamBase(Reset):
         if self._ready_init is not None and hasattr(self.bus, "tready"):
             self.bus.tready.setimmediatevalue(self._ready_init)
 
-        for sig in self._signals+self._optional_signals:
+        for sig in self._signals + self._optional_signals:
             if hasattr(self.bus, sig):
                 if self._init_x and sig not in ("tvalid", "tready"):
                     v = getattr(self.bus, sig).value
-                    v.binstr = 'x'*len(v)
+                    v.binstr = "x" * len(v)
                     getattr(self.bus, sig).setimmediatevalue(v)
 
         if hasattr(self.bus, "tkeep"):
@@ -318,22 +316,23 @@ class AxiStreamBase(Reset):
                 self.byte_lanes = self.width // byte_size
 
         self.byte_size = self.width // self.byte_lanes
-        self.byte_mask = 2**self.byte_size-1
+        self.byte_mask = 2**self.byte_size - 1
 
-        self.log.info("AXI stream %s configuration:", self._type)
-        self.log.info("  Byte size: %d bits", self.byte_size)
-        self.log.info("  Data width: %d bits (%d bytes)", self.width, self.byte_lanes)
+        self.log.debug("AXI stream %s configuration:", self._type)
+        self.log.debug("  Byte size: %d bits", self.byte_size)
+        self.log.debug("  Data width: %d bits (%d bytes)", self.width, self.byte_lanes)
 
-        self.log.info("AXI stream %s signals:", self._type)
+        self.log.debug("AXI stream %s signals:", self._type)
         for sig in sorted(list(set().union(self.bus._signals, self.bus._optional_signals))):
             if hasattr(self.bus, sig):
-                self.log.info("  %s width: %d bits", sig, len(getattr(self.bus, sig)))
+                self.log.debug("  %s width: %d bits", sig, len(getattr(self.bus, sig)))
             else:
-                self.log.info("  %s: not present", sig)
+                self.log.debug("  %s: not present", sig)
 
         if self.byte_lanes * self.byte_size != self.width:
-            raise ValueError(f"Bus does not evenly divide into byte lanes "
-                f"({self.byte_lanes} * {self.byte_size} != {self.width})")
+            raise ValueError(
+                f"Bus does not evenly divide into byte lanes " f"({self.byte_lanes} * {self.byte_size} != {self.width})"
+            )
 
         self._run_cr = None
 
@@ -358,7 +357,7 @@ class AxiStreamBase(Reset):
 
     def _handle_reset(self, state):
         if state:
-            self.log.info("Reset asserted")
+            self.log.debug("Reset asserted")
             if self._run_cr is not None:
                 self._run_cr.kill()
                 self._run_cr = None
@@ -368,7 +367,7 @@ class AxiStreamBase(Reset):
             if self.queue.empty():
                 self.idle_event.set()
         else:
-            self.log.info("Reset de-asserted")
+            self.log.debug("Reset de-asserted")
             if self._run_cr is None:
                 self._run_cr = cocotb.start_soon(self._run())
 
@@ -419,7 +418,6 @@ class AxiStreamPause:
 
 
 class AxiStreamSource(AxiStreamBase, AxiStreamPause):
-
     _type = "source"
 
     _init_x = True
@@ -427,9 +425,9 @@ class AxiStreamSource(AxiStreamBase, AxiStreamPause):
     _valid_init = 0
     _ready_init = None
 
-    def __init__(self, bus, clock, reset=None, reset_active_level=True,
-            byte_size=None, byte_lanes=None, *args, **kwargs):
-
+    def __init__(
+        self, bus, clock, reset=None, reset_active_level=True, byte_size=None, byte_lanes=None, *args, **kwargs
+    ):
         super().__init__(bus, clock, reset, reset_active_level, byte_size, byte_lanes, *args, **kwargs)
 
         self.queue_occupancy_limit_bytes = -1
@@ -530,7 +528,7 @@ class AxiStreamSource(AxiStreamBase, AxiStreamPause):
                     self.current_frame = frame
                     frame.sim_time_start = get_sim_time()
                     frame.sim_time_end = None
-                    self.log.info("TX frame: %s", frame)
+                    self.log.debug("TX frame: %s", frame)
                     frame.normalize()
                     self.active = True
                     frame_offset = 0
@@ -586,7 +584,6 @@ class AxiStreamSource(AxiStreamBase, AxiStreamPause):
 
 
 class AxiStreamMonitor(AxiStreamBase):
-
     _type = "monitor"
 
     _init_x = False
@@ -594,9 +591,9 @@ class AxiStreamMonitor(AxiStreamBase):
     _valid_init = None
     _ready_init = None
 
-    def __init__(self, bus, clock, reset=None, reset_active_level=True,
-            byte_size=None, byte_lanes=None, *args, **kwargs):
-
+    def __init__(
+        self, bus, clock, reset=None, reset_active_level=True, byte_size=None, byte_lanes=None, *args, **kwargs
+    ):
         super().__init__(bus, clock, reset, reset_active_level, byte_size, byte_lanes, *args, **kwargs)
 
         self.read_queue = []
@@ -646,7 +643,7 @@ class AxiStreamMonitor(AxiStreamBase):
     def idle(self):
         return not self.active
 
-    async def wait(self, timeout=0, timeout_unit='ns'):
+    async def wait(self, timeout=0, timeout_unit="ns"):
         if not self.empty():
             return
         if timeout:
@@ -713,7 +710,7 @@ class AxiStreamMonitor(AxiStreamBase):
 
                 if not has_tlast or self.bus.tlast.value:
                     frame.sim_time_end = get_sim_time()
-                    self.log.info("RX frame: %s", frame)
+                    self.log.debug("RX frame: %s", frame)
 
                     self.queue_occupancy_bytes += len(frame)
                     self.queue_occupancy_frames += 1
@@ -730,7 +727,6 @@ class AxiStreamMonitor(AxiStreamBase):
 
 
 class AxiStreamSink(AxiStreamMonitor, AxiStreamPause):
-
     _type = "sink"
 
     _init_x = False
@@ -738,9 +734,9 @@ class AxiStreamSink(AxiStreamMonitor, AxiStreamPause):
     _valid_init = None
     _ready_init = 0
 
-    def __init__(self, bus, clock, reset=None, reset_active_level=True,
-            byte_size=None, byte_lanes=None, *args, **kwargs):
-
+    def __init__(
+        self, bus, clock, reset=None, reset_active_level=True, byte_size=None, byte_lanes=None, *args, **kwargs
+    ):
         self.queue_occupancy_limit_bytes = -1
         self.queue_occupancy_limit_frames = -1
 
@@ -814,7 +810,7 @@ class AxiStreamSink(AxiStreamMonitor, AxiStreamPause):
 
                 if not has_tlast or self.bus.tlast.value:
                     frame.sim_time_end = get_sim_time()
-                    self.log.info("RX frame: %s", frame)
+                    self.log.debug("RX frame: %s", frame)
 
                     self.queue_occupancy_bytes += len(frame)
                     self.queue_occupancy_frames += 1

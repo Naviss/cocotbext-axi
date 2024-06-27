@@ -33,7 +33,6 @@ from .reset import Reset
 
 
 class StreamBus(Bus):
-
     _signals = ["data"]
     _optional_signals = []
 
@@ -50,7 +49,6 @@ class StreamBus(Bus):
 
 
 class StreamTransaction:
-
     _signals = ["data"]
 
     def __init__(self, *args, **kwargs):
@@ -68,7 +66,6 @@ class StreamTransaction:
 
 
 class StreamBase(Reset):
-
     _signals = ["data", "valid", "ready"]
     _optional_signals = []
 
@@ -114,13 +111,13 @@ class StreamBase(Reset):
             if self._valid_init is not None:
                 self.valid.setimmediatevalue(self._valid_init)
 
-        for sig in self._signals+self._optional_signals:
+        for sig in self._signals + self._optional_signals:
             if hasattr(self.bus, sig):
                 if sig in self._signal_widths:
                     assert len(getattr(self.bus, sig)) == self._signal_widths[sig]
                 if self._init_x and sig not in (self._valid_signal, self._ready_signal):
                     v = getattr(self.bus, sig).value
-                    v.binstr = 'x'*len(v)
+                    v.binstr = "x" * len(v)
                     getattr(self.bus, sig).setimmediatevalue(v)
 
         self._run_cr = None
@@ -142,7 +139,7 @@ class StreamBase(Reset):
 
     def _handle_reset(self, state):
         if state:
-            self.log.info("Reset asserted")
+            self.log.debug("Reset asserted")
             if self._run_cr is not None:
                 self._run_cr.kill()
                 self._run_cr = None
@@ -152,7 +149,7 @@ class StreamBase(Reset):
             if self.queue.empty():
                 self.idle_event.set()
         else:
-            self.log.info("Reset de-asserted")
+            self.log.debug("Reset de-asserted")
             if self._run_cr is None:
                 self._run_cr = cocotb.start_soon(self._run())
 
@@ -203,7 +200,6 @@ class StreamPause:
 
 
 class StreamSource(StreamBase, StreamPause):
-
     _init_x = True
 
     _valid_init = 0
@@ -280,7 +276,6 @@ class StreamSource(StreamBase, StreamPause):
 
 
 class StreamMonitor(StreamBase):
-
     _init_x = False
 
     _valid_init = None
@@ -359,7 +354,6 @@ class StreamMonitor(StreamBase):
 
 
 class StreamSink(StreamMonitor, StreamPause):
-
     _init_x = False
 
     _valid_init = None
@@ -436,14 +430,14 @@ def define_stream(name, signals, optional_signals=None, valid_signal=None, ready
 
     if valid_signal is None:
         for s in all_signals:
-            if s.lower().endswith('valid'):
+            if s.lower().endswith("valid"):
                 valid_signal = s
     if valid_signal not in all_signals:
         signals += valid_signal
 
     if ready_signal is None:
         for s in all_signals:
-            if s.lower().endswith('ready'):
+            if s.lower().endswith("ready"):
                 ready_signal = s
     else:
         if ready_signal not in all_signals:
@@ -465,26 +459,26 @@ def define_stream(name, signals, optional_signals=None, valid_signal=None, ready
             filtered_signals.append(s)
 
     attrib = {}
-    attrib['_signals'] = signals
-    attrib['_optional_signals'] = optional_signals
-    bus = type(name+"Bus", (StreamBus,), attrib)
+    attrib["_signals"] = signals
+    attrib["_optional_signals"] = optional_signals
+    bus = type(name + "Bus", (StreamBus,), attrib)
 
     attrib = {s: 0 for s in filtered_signals}
-    attrib['_signals'] = filtered_signals
+    attrib["_signals"] = filtered_signals
 
-    transaction = type(name+"Transaction", (StreamTransaction,), attrib)
+    transaction = type(name + "Transaction", (StreamTransaction,), attrib)
 
     attrib = {}
-    attrib['_signals'] = signals
-    attrib['_optional_signals'] = optional_signals
-    attrib['_signal_widths'] = signal_widths
-    attrib['_ready_signal'] = ready_signal
-    attrib['_valid_signal'] = valid_signal
-    attrib['_transaction_obj'] = transaction
-    attrib['_bus_obj'] = bus
+    attrib["_signals"] = signals
+    attrib["_optional_signals"] = optional_signals
+    attrib["_signal_widths"] = signal_widths
+    attrib["_ready_signal"] = ready_signal
+    attrib["_valid_signal"] = valid_signal
+    attrib["_transaction_obj"] = transaction
+    attrib["_bus_obj"] = bus
 
-    source = type(name+"Source", (StreamSource,), attrib)
-    sink = type(name+"Sink", (StreamSink,), attrib)
-    monitor = type(name+"Monitor", (StreamMonitor,), attrib)
+    source = type(name + "Source", (StreamSource,), attrib)
+    sink = type(name + "Sink", (StreamSink,), attrib)
+    monitor = type(name + "Monitor", (StreamMonitor,), attrib)
 
     return bus, transaction, source, sink, monitor
